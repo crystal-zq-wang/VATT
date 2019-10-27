@@ -1,9 +1,15 @@
 import crepe
 import numpy
 import csv
+import os
 
 lst = list()
-with open ('Recording.f0.csv',newline='') as csvfile:
+filename = 'Recording'
+cmd = 'crepe ' + filename + '.wav'
+os.system(cmd)
+
+
+with open (filename+'.f0.csv',newline='') as csvfile:
     data = csv.reader(csvfile, delimiter=',')
     for row in data:
         lst.append(row[1])
