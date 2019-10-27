@@ -6,9 +6,30 @@ import crepe
 import numpy
 import csv
 
+from time import sleep
 from google.cloud import translate_v2, speech_v1, texttospeech
 from moviepy.editor import *
-from scipy.io import wavfile
+
+
+#This function centers the text vertically in the terminal
+def enters(n):
+    row= os.get_terminal_size().lines
+    enter= (row-n)/2
+    for i in range(int(enter)):
+        print()
+
+#This function prints out the text centered horizontally and at the specified speed
+def prints(str, n, input_size=0):
+    col= os.get_terminal_size().columns
+    length_sen= len(str)
+    space= (col-length_sen)/2-input_size
+
+    for i in range(int(space)):
+        print(" ", end='', flush=True)
+        
+    for i in str:
+        sleep(n)
+        print(i, end='', flush=True)
 
 
 class VideoTranslator:
@@ -70,24 +91,22 @@ class VideoTranslator:
             out.write(translated_audio)
 
         audio_background = AudioFileClip("output.mp3")
+
+        os.system("clear")
+
         final_audio = CompositeAudioClip([audio_background])
         final_clip = videoclip.set_audio(audio_background)
         final_clip.write_videofile("result.mp4")
 
-        # clip = VideoFileClip("result.mp4")
-        # clip_resized = clip.resize(h, w)
-        # clip_resized.write_videofile("result.mp4")
+        os.system("clear")
 
-        # final_final_clip= moviepy.video.fx.all.resize(VideoFileClip("result.mp4"), newsize=(h, w))
-        # final_final_clip.write_videofile("result.mp4")
-        # final_clip.f1(moviepy.video.fx.all.resize)
-        # final_clip.write_videofile("result_final.mp4")
+        clip_resized = final_clip.fx(vfx.resize, newsize=(h, w))
 
-        # new_clip = videoclip.set_audio(AudioFileClip("output.mp3"))
-        # videoclip.write_videofile("output.mp4")
+        os.system("clear")
 
-        #videoclip.write_videofile("output.mp4", audio="trying.mp3")
-        #return self.splice_video_and_audio(video, translated_audio)
+        clip_resized.write_videofile("result.mp4")
+
+        os.system("clear")
 
     def edit_transcript(self, transcript):
         return transcript.replace("&#39;", "'")
@@ -95,7 +114,7 @@ class VideoTranslator:
     def split_transcript(self, transcript):
         return transcript.split(' ')
 
-    def get_transcript(self, audio, native_lng): #CRYSTAL HAS THIS CODE
+    def get_transcript(self, audio, native_lng):
         config = {
             "audio_channel_count": self.audio_channel_count,
             "enable_separate_recognition_per_channel": self.enable_separate_recognition_per_channel,
@@ -107,13 +126,13 @@ class VideoTranslator:
 
         return format(alternative.transcript)
 
-    def get_speed_factor(self, native_line, translated_line): #CAN EDIT THIS LATER, FUNCTIONAL FOR NOW
+    def get_speed_factor(self, native_line, translated_line): # incomplete
         return len(translated_line)/len(native_line)
 
     def determine_gender(self, frequency):
         return frequency > 170 and "female" or "male"
 
-    def text_to_audio(self, text, lng, speed_factor=1, gender=None): #CRYSTAL IS WORKING ON THIS CODE
+    def text_to_audio(self, text, lng, speed_factor=1, gender=None): 
         
          # gender = self.determine_gender(frequency)
 
@@ -131,8 +150,12 @@ class VideoTranslator:
         return response.audio_content
 
 
+os.system("clear")
+
 # Takes in the name of the input file, which is a .mov file
-s = input("Specify Filename: ")
+enters(1)
+prints("Specify Filename: ", 0.01, 10)
+s= input()
 
 # Getting the dimensions of the original video
 vid = cv2.VideoCapture(s)
@@ -142,17 +165,24 @@ w = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
 # Making an audiofile out of the the video file, named "trying.wav"
 videoclip = VideoFileClip(s)
 audioclip = videoclip.audio
-audioclip.write_audiofile("trying.wav", verbose=True)
+audioclip.write_audiofile("trying.wav", verbose=False)
+os.system("clear")
 
 # taking inputs of native language and changin language
-s1 = str(input("Input Language: ")).strip()
-s2 = str(input("Output Language: ")).strip()
+enters(1)
+prints("Input Language: ", 0.01, 8)
+s1 = str(input()).strip()
+
+print()
+print()
+
+prints("Output Language: ", 0.01, 8)
+s2 = str(input()).strip()
 
 #finsing average frequency of the input audio
-
 lst = list()
-filename = "trying"
-os.system("crepe trying.wav --step-size 100")
+os.system("clear")
+os.system("crepe trying.wav --step-size 100 clear")
 
 with open ('trying.f0.csv',newline='') as csvfile:
     data = csv.reader(csvfile, delimiter=',')
@@ -161,25 +191,25 @@ with open ('trying.f0.csv',newline='') as csvfile:
 
 lst = lst[1:]
 lst = [float(s) for s in lst]
-
 lst.sort()
-
 length = len(lst)
 
 DELTA = 0.1
-assert DELTA < 0.5, "not gonna work bro"
-
 lst = lst[int(length*DELTA):-int(length*DELTA)]
 frequency = sum(lst) / len(lst)
-print(frequency)
 
-"""
-if s2=="random":
-    vt.languages.random
-"""
+os.system("clear")
+
+""" Ideas: Randomized language """
 
 vt = VideoTranslator()
-
+os.system("clear")
 vt.translate_video("trying.wav", s1, s2)
-
+os.system("clear")
 os.remove("trying.wav")
+os.system("clear")
+
+enters(1)
+prints("Task completed. Please check directory for new video.", 0.02)
+for _ in range(5):
+    print()
