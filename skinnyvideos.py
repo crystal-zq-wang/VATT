@@ -1,6 +1,7 @@
 from google.cloud import translate_v2, speech_v1, texttospeech
 import io
 from moviepy.editor import *
+import moviepy.editor as mpe
 
 class Video_Translator:
 
@@ -55,8 +56,20 @@ class Video_Translator:
             else:
                 translated_audio = translated_audio + self.text_to_audio(translated_line, lng, speed_factor=speed_factor)
 
+
         with open('output.mp3', 'wb') as out:
             out.write(translated_audio)
+
+        my_clip = videoclip
+        audio_background = mpe.AudioFileClip('output.mp3')
+        final_audio = mpe.CompositeAudioClip([audio_background])
+        final_clip = my_clip.set_audio(final_audio)
+        final_clip.write_videofile("result.mp4")
+
+        # new_clip = videoclip.set_audio(AudioFileClip("output.mp3"))
+        # videoclip.write_videofile("output.mp4")
+
+        #videoclip.write_videofile("output.mp4", audio="trying.mp3")
         #return self.splice_video_and_audio(video, translated_audio)
 
     def edit_transcript(self, transcript):
