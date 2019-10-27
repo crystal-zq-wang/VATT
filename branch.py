@@ -71,19 +71,17 @@ class VideoTranslator:
 
         audio_background = AudioFileClip("output.mp3")
         final_audio = CompositeAudioClip([audio_background])
-        final_clip = videoclip.set_audio(final_audio)
+        final_clip = videoclip.set_audio(audio_background)
         final_clip.write_videofile("result.mp4")
 
-        vid2 = cv2.VideoCapture("result.mp4")
-        h2 = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        w2 = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
-        print("height and width are", h2, w2)
+        # clip = VideoFileClip("result.mp4")
+        # clip_resized = clip.resize(h, w)
+        # clip_resized.write_videofile("result.mp4")
 
-        print("changing", h2, "to", h)
-
-        final_final_clip= moviepy.video.fx.all.resize(VideoFileClip("result.mp4"), newsize=(h, w))
-        final_final_clip.write_videofile("result.mp4")
-
+        # final_final_clip= moviepy.video.fx.all.resize(VideoFileClip("result.mp4"), newsize=(h, w))
+        # final_final_clip.write_videofile("result.mp4")
+        # final_clip.f1(moviepy.video.fx.all.resize)
+        # final_clip.write_videofile("result_final.mp4")
 
         # new_clip = videoclip.set_audio(AudioFileClip("output.mp3"))
         # videoclip.write_videofile("output.mp4")
@@ -112,12 +110,12 @@ class VideoTranslator:
     def get_speed_factor(self, native_line, translated_line): #CAN EDIT THIS LATER, FUNCTIONAL FOR NOW
         return len(translated_line)/len(native_line)
 
-    def determine_gender(frequency):
+    def determine_gender(self, frequency):
         return frequency > 170 and "female" or "male"
 
     def text_to_audio(self, text, lng, speed_factor=1, gender=None): #CRYSTAL IS WORKING ON THIS CODE
         
-        # gender = determine_gender(frequency)
+         # gender = self.determine_gender(frequency)
 
         if gender == "female":
             ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE
@@ -132,49 +130,56 @@ class VideoTranslator:
         response = self.text_audio_client.synthesize_speech(synthesis_input, voice, audio_config)
         return response.audio_content
 
+
+# Takes in the name of the input file, which is a .mov file
 s = input("Specify Filename: ")
 
-# sr, audio = wavfile.read('result.mp4')
-# time, frequency, confidence, activation = crepe.predict(audio, sr, viterbi= True)
-
-"""
-if the frequency is between upto 170, then it is a male voice.
-if the frequency is between 171 and infinity, then it is a female voice.
-"""
-
+# Getting the dimensions of the original video
 vid = cv2.VideoCapture(s)
 h = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
 w = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
-print("height and width are", h, w)
 
+# Making an audiofile out of the the video file, named "trying.wav"
 videoclip = VideoFileClip(s)
 audioclip = videoclip.audio
 audioclip.write_audiofile("trying.wav", verbose=True)
 
+# taking inputs of native language and changin language
+s1 = str(input("Input Language: ")).strip()
+s2 = str(input("Output Language: ")).strip()
+
+#finsing average frequency of the input audio
 
 lst = list()
-with open ('Recording.f0.csv',newline='') as csvfile:
+filename = "trying"
+os.system("crepe trying.wav --step-size 100")
+
+with open ('trying.f0.csv',newline='') as csvfile:
     data = csv.reader(csvfile, delimiter=',')
     for row in data:
         lst.append(row[1])
 
 lst = lst[1:]
 lst = [float(s) for s in lst]
-# print(type(lst[1]))
+
 lst.sort()
+
 length = len(lst)
+
 DELTA = 0.1
-assert DELTA < 0.5, "Delta too large, frequency undetected"
+assert DELTA < 0.5, "not gonna work bro"
+
 lst = lst[int(length*DELTA):-int(length*DELTA)]
-average = sum(lst) / len(lst)
-print(average)
+frequency = sum(lst) / len(lst)
+print(frequency)
 
-
-
-s1 = str(input("Input Language: "))
-s2 = str(input("Output Language: "))
+"""
+if s2=="random":
+    vt.languages.random
+"""
 
 vt = VideoTranslator()
+
 vt.translate_video("trying.wav", s1, s2)
 
 os.remove("trying.wav")
