@@ -1,10 +1,15 @@
 import io
 import os
+import cv2
+import moviepy
 import crepe
+import numpy
+import csv
 
 from google.cloud import translate_v2, speech_v1, texttospeech
 from moviepy.editor import *
 from scipy.io import wavfile
+
 
 class VideoTranslator:
 
@@ -69,6 +74,17 @@ class VideoTranslator:
         final_clip = videoclip.set_audio(final_audio)
         final_clip.write_videofile("result.mp4")
 
+        vid2 = cv2.VideoCapture("result.mp4")
+        h2 = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        w2 = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+        print("height and width are", h2, w2)
+
+        print("changing", h2, "to", h)
+
+        final_final_clip= moviepy.video.fx.all.resize(VideoFileClip("result.mp4"), newsize=(h, w))
+        final_final_clip.write_videofile("result.mp4")
+
+
         # new_clip = videoclip.set_audio(AudioFileClip("output.mp3"))
         # videoclip.write_videofile("output.mp4")
 
@@ -80,10 +96,6 @@ class VideoTranslator:
 
     def split_transcript(self, transcript):
         return transcript.split(' ')
-
-
-    def retrieve_video_and_audio(self, url): #ARUSHI HAS THIS CODE
-        return None
 
     def get_transcript(self, audio, native_lng): #CRYSTAL HAS THIS CODE
         config = {
@@ -105,7 +117,8 @@ class VideoTranslator:
 
     def text_to_audio(self, text, lng, speed_factor=1, gender=None): #CRYSTAL IS WORKING ON THIS CODE
         
-        gender = determine_gender(frequency)
+        # gender = determine_gender(frequency)
+
         if gender == "female":
             ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE
         elif gender == "male":
@@ -121,17 +134,42 @@ class VideoTranslator:
 
 s = input("Specify Filename: ")
 
-sr, audio = wavfile.read('nani.mov')
-time, frequency, confidence, activation = crepe.predict(audio, sr, viterbi= True)
+# sr, audio = wavfile.read('result.mp4')
+# time, frequency, confidence, activation = crepe.predict(audio, sr, viterbi= True)
 
 """
 if the frequency is between upto 170, then it is a male voice.
 if the frequency is between 171 and infinity, then it is a female voice.
 """
 
+vid = cv2.VideoCapture(s)
+h = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+w = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+print("height and width are", h, w)
+
 videoclip = VideoFileClip(s)
 audioclip = videoclip.audio
 audioclip.write_audiofile("trying.wav", verbose=True)
+
+
+lst = list()
+with open ('Recording.f0.csv',newline='') as csvfile:
+    data = csv.reader(csvfile, delimiter=',')
+    for row in data:
+        lst.append(row[1])
+
+lst = lst[1:]
+lst = [float(s) for s in lst]
+# print(type(lst[1]))
+lst.sort()
+length = len(lst)
+DELTA = 0.1
+assert DELTA < 0.5, "Delta too large, frequency undetected"
+lst = lst[int(length*DELTA):-int(length*DELTA)]
+average = sum(lst) / len(lst)
+print(average)
+
+
 
 s1 = str(input("Input Language: "))
 s2 = str(input("Output Language: "))
