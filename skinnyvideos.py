@@ -1,6 +1,6 @@
 from google.cloud import translate_v2, speech_v1, texttospeech
 import io
-
+from moviepy.editor import *
 
 class Video_Translator:
 
@@ -24,7 +24,6 @@ class Video_Translator:
 
         #START TEXT-AUDIO SETUP
         self.text_audio_client = texttospeech.TextToSpeechClient()
-        
         #END TEXT-AUDIO SETUP
 
     def translate(self, text, lng="english"):
@@ -41,27 +40,31 @@ class Video_Translator:
         #video, audio = self.retrieve_video_and_audio(url)
         audio = {"content": self.get_audio(url)}
         
-        #full_transcript = 
-        full_transcript = self.get_transcript(audio, native_lng).split(".")
+        full_transcript = self.split_transcript(self.get_transcript(audio, native_lng))
         translated_transcript = []
         for line in full_transcript:
             translated_transcript.append(self.translate(line, lng))
-        #print(translated_transcript)
-        return translated_transcript
 
+        translated_audio = None 
+        for i in range(len(full_transcript)):
+            native_line = full_transcript[i]
+            translated_line = translated_transcript[i]
+            speed_factor = self.get_speed_factor(native_line, translated_line)
+            if not translated_audio:
+                translated_audio = self.text_to_audio(translated_line, lng, speed_factor=speed_factor)
+            else:
+                translated_audio = translated_audio + self.text_to_audio(translated_line, lng, speed_factor=speed_factor)
+
+        with open('output.mp3', 'wb') as out:
+            out.write(translated_audio)
+        #return self.splice_video_and_audio(video, translated_audio)
 
     def edit_transcript(self, transcript):
         return transcript.replace("&#39;", "'")
-        #translated_audio
-        
-        #translated_audio = None #REPLACE THIS
-        #for i in range(len(full_transcript)):
-        #    native_line = full_transcript(i)
-        #    translated_line = translated_transcript(i)
-        #    speed_factor = self.get_speed_factor(native_line, translated_line)
-        #    translated_audio += self.text_to_audio(translated_line, speed_factor)
 
-        #return self.splice_video_and_audio(video, translated_audio)
+    def split_transcript(self, transcript):
+        return transcript.split(' ')
+
 
     def retrieve_video_and_audio(self, url): #ARUSHI HAS THIS CODE
         return None
@@ -78,7 +81,7 @@ class Video_Translator:
 
         return format(alternative.transcript)
 
-    def get_speed_factor(native_line, translated_line): #CAN EDIT THIS LATER, FUNCTIONAL FOR NOW
+    def get_speed_factor(self, native_line, translated_line): #CAN EDIT THIS LATER, FUNCTIONAL FOR NOW
         return len(translated_line)/len(native_line)
 
     def text_to_audio(self, text, lng, speed_factor=1, gender=None): #CRYSTAL IS WORKING ON THIS CODE
@@ -94,11 +97,23 @@ class Video_Translator:
         voice = texttospeech.types.VoiceSelectionParams(language_code=self.languages[lng], ssml_gender=ssml_gender)
         audio_config = texttospeech.types.AudioConfig(audio_encoding=texttospeech.enums.AudioEncoding.MP3)
         response = self.text_audio_client.synthesize_speech(synthesis_input, voice, audio_config)
-        with open('output.mp3', 'wb') as out:
+        return response.audio_content
             # Write the response to the output file.
-            out.write(response.audio_content)
-            print('Audio content written to file "output.mp3"')
-            
+        #    out.write(response.audio_content)
+        #    print('Audio content written to file "output.mp3"')
+
 
     def splice_video_and_audio(self, video, audio): # I SUPPOSE I(ANTON) WILL WORK ON THIS NOW
         return None
+
+s = input("Specify Filename: ")
+
+videoclip = VideoFileClip(s)
+audioclip = videoclip.audio
+audioclip.write_audiofile("trying.wav", verbose=True)
+
+s1 = str(input("Input Language: "))
+s2 = str(input("Output Language: "))
+
+vt = Video_Translator()
+vt.translate_video("trying.wav", s1, s2)
